@@ -603,6 +603,7 @@ GridView {
         required property string gitStatusIcon
         required property bool hasImagePreview
         required property bool hasVideoPreview
+        required property bool hasAudioPreview
         required property bool hasPdfPreview
 
         readonly property bool isSelected: root.selectedIndices.indexOf(index) >= 0
@@ -631,7 +632,7 @@ GridView {
 
         readonly property bool hasThumbnail: !fileOps.isRemotePath(delegateItem.filePath) && !fileOps.isSlowPath(delegateItem.filePath)
             && (delegateItem.isDir || delegateItem.hasImagePreview || delegateItem.hasVideoPreview
-                || delegateItem.hasPdfPreview)
+                || delegateItem.hasAudioPreview || delegateItem.hasPdfPreview)
 
         Image {
             id: thumbImg

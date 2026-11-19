@@ -349,11 +349,11 @@ QString fileTypeForEntry(const QString &name, bool isDir, const QString &content
     return mime.isValid() ? mime.comment() : QFileInfo(name).suffix();
 }
 
-// Classify a file as image/video for thumbnail purposes. Prefers an
+// Classify a file as image/video/audio/pdf for thumbnail purposes. Prefers an
 // already-known content type (e.g. from `gio list -a standard::content-type`
 // for trash entries) and otherwise asks QMimeDatabase. For local files
 // QMimeDatabase content-sniffs ambiguous extensions like .ts.
-enum class PreviewKind { None, Image, Video, Pdf };
+enum class PreviewKind { None, Image, Video, Audio, Pdf };
 
 PreviewKind previewKindForEntry(const QString &localPath, bool isDir,
                                 const QString &contentType = QString())
@@ -374,6 +374,8 @@ PreviewKind previewKindForEntry(const QString &localPath, bool isDir,
         return PreviewKind::Image;
     if (mimeName.startsWith(QLatin1String("video/")))
         return PreviewKind::Video;
+    if (mimeName.startsWith(QLatin1String("audio/")))
+        return PreviewKind::Audio;
     if (mimeName == QLatin1String("application/pdf"))
         return PreviewKind::Pdf;
     return PreviewKind::None;
@@ -792,6 +794,13 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
                 entry.value(QStringLiteral("mimeType")).toString());
             return kind == PreviewKind::Video;
         }
+        case HasAudioPreviewRole: {
+            const PreviewKind kind = previewKindForEntry(
+                entry.value(QStringLiteral("fileName")).toString(),
+                entry.value(QStringLiteral("isDir")).toBool(),
+                entry.value(QStringLiteral("mimeType")).toString());
+            return kind == PreviewKind::Audio;
+        }
         default:
             return {};
         }
@@ -830,6 +839,7 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
             return QString();
         case HasImagePreviewRole:
         case HasVideoPreviewRole:
+        case HasAudioPreviewRole:
             // No thumbnails for remote files (the thumbnailer needs local
             // file access).
             return false;
@@ -903,6 +913,9 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
     case HasVideoPreviewRole:
         ensurePopulated(entry);
         return detailsOf(entry).hasVideoPreview;
+    case HasAudioPreviewRole:
+        ensurePopulated(entry);
+        return detailsOf(entry).hasAudioPreview;
     case HasPdfPreviewRole:
         ensurePopulated(entry);
         return detailsOf(entry).hasPdfPreview;
@@ -945,6 +958,7 @@ QHash<int, QByteArray> FileSystemModel::roleNames() const
         {GitStatusIconRole,    "gitStatusIcon"},
         {HasImagePreviewRole,  "hasImagePreview"},
         {HasVideoPreviewRole,  "hasVideoPreview"},
+        {HasAudioPreviewRole,  "hasAudioPreview"},
         {HasPdfPreviewRole,    "hasPdfPreview"},
         {FileOwnerRole,        "fileOwner"},
         {FileGroupRole,        "fileGroup"},
@@ -1728,6 +1742,7 @@ void FileSystemModel::ensurePopulated(const Entry &entry) const
     const PreviewKind kind = previewKindForEntry(absPath, isDir, mimeName);
     details.hasImagePreview = kind == PreviewKind::Image;
     details.hasVideoPreview = kind == PreviewKind::Video;
+    details.hasAudioPreview = kind == PreviewKind::Audio;
     details.hasPdfPreview = kind == PreviewKind::Pdf;
     details.populated = true;
 }
@@ -1824,6 +1839,7 @@ bool FileSystemModel::applyLocalDiff(const QList<Entry> &newEntries)
                     FileModifiedRole, FileModifiedTextRole,
                     FilePermissionsRole,
                     HasImagePreviewRole, HasVideoPreviewRole,
+                    HasAudioPreviewRole,
                 };
                 emit dataChanged(index(0, 0), index(newCount - 1, 0), changedRoles);
             }

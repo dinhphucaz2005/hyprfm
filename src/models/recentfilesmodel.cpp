@@ -105,6 +105,11 @@ QVariant RecentFilesModel::data(const QModelIndex &index, int role) const
         return mimeDb.mimeTypeForFile(info).name()
             .startsWith(QLatin1String("video/"));
     }
+    case HasAudioPreviewRole: {
+        static QMimeDatabase mimeDb;
+        return mimeDb.mimeTypeForFile(info).name()
+            .startsWith(QLatin1String("audio/"));
+    }
     case HasPdfPreviewRole: {
         static QMimeDatabase mimeDb;
         return mimeDb.mimeTypeForFile(info).name() == QLatin1String("application/pdf");
@@ -132,6 +137,7 @@ QHash<int, QByteArray> RecentFilesModel::roleNames() const
         {GitStatusIconRole,    "gitStatusIcon"},
         {HasImagePreviewRole,  "hasImagePreview"},
         {HasVideoPreviewRole,  "hasVideoPreview"},
+        {HasAudioPreviewRole,  "hasAudioPreview"},
         {HasPdfPreviewRole,    "hasPdfPreview"},
     };
 }

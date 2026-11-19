@@ -55,6 +55,7 @@ public:
         // ambiguous extensions like .ts (TypeScript vs MPEG-TS).
         HasImagePreviewRole,
         HasVideoPreviewRole,
+        HasAudioPreviewRole,
         HasPdfPreviewRole,
         // Optional detailed-view columns.
         FileOwnerRole,
@@ -145,6 +146,7 @@ private:
         QString mimeType;   // also filled alone by a MimeTypeRole read
         bool hasImagePreview = false;
         bool hasVideoPreview = false;
+        bool hasAudioPreview = false;
         bool hasPdfPreview = false;
         bool populated = false;
     };

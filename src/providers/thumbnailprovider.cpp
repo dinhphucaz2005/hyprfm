@@ -105,6 +105,12 @@ static bool isVideoFile(const QString &path)
     return mime.isValid() && mime.name().startsWith(QLatin1String("video/"));
 }
 
+static bool isAudioFile(const QString &path)
+{
+    const QMimeType mime = mimeForLocation(path);
+    return mime.isValid() && mime.name().startsWith(QLatin1String("audio/"));
+}
+
 // QImageReader + qsvg plugin technically handles SVG, but the plugin relies
 // on the `<svg width/height>` attrs to return a non-zero intrinsic size.
 // Lots of SVGs in the wild ship only `viewBox`, so the reader returns a
@@ -402,6 +408,8 @@ void ThumbnailResponse::run()
 
     if (isVideoFile(m_id))
         generateVideoThumbnail();
+    else if (isAudioFile(m_id))
+        generateAudioThumbnail();
     else if (isSvgFile(m_id))
         generateSvgThumbnail();
     else
@@ -543,6 +551,40 @@ void ThumbnailResponse::generateVideoThumbnail()
         "-vframes", "1",       // extract 1 frame
         "-vf", QString("scale=%1:%2:force_original_aspect_ratio=decrease")
                    .arg(targetSize.width()).arg(targetSize.height()),
+        "-y", tmpPath
+    });
+
+    if (!proc.waitForFinished(5000))
+        return;
+
+    if (proc.exitCode() == 0)
+        m_image.load(tmpPath);
+
+    QFile::remove(tmpPath);
+}
+
+void ThumbnailResponse::generateAudioThumbnail()
+{
+    QSize targetSize = m_requestedSize.isValid() ? m_requestedSize : QSize(80, 80);
+
+    QTemporaryFile tmpFile;
+    tmpFile.setFileTemplate(tmpFile.fileTemplate() + ".png");
+    if (!tmpFile.open())
+        return;
+    QString tmpPath = tmpFile.fileName();
+    tmpFile.close();
+
+    QProcess proc;
+    proc.start("ffmpeg", {
+        "-v", "error",
+        "-nostdin",
+        "-threads", "1",
+        "-i", m_id,
+        "-an",
+        "-c:v", "png",
+        "-vf", QString("scale=%1:%2:force_original_aspect_ratio=decrease")
+                   .arg(targetSize.width()).arg(targetSize.height()),
+        "-vframes", "1",
         "-y", tmpPath
     });
 

@@ -198,17 +198,19 @@ Item {
             return ""
         return "Page " + (pdfPageIndex + 1) + " of " + pdfPreview.pageCount
     }
-    readonly property bool hasVisualPreview: isImage || (isVideo && videoPreviewAvailable)
+    readonly property bool hasVisualPreview: isImage || ((isVideo || isAudio) && videoPreviewAvailable)
     readonly property string visualSource: {
         if (!hasVisualPreview || filePath === "")
             return ""
-        if (isVideo || isTrashUri || isSvg)
+        if (isVideo || isAudio || isTrashUri || isSvg)
             return "image://thumbnail/" + encodeURIComponent(filePath)
         return "file://" + filePath
     }
     readonly property string visualStatusText: {
         if (isVideo)
             return "Video poster preview"
+        if (isAudio)
+            return "Album art preview"
         if (isImage)
             return "Image preview"
         return "Preview"

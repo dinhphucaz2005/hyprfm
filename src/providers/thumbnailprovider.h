@@ -30,6 +30,7 @@ private:
     void generateImageThumbnail();
     void generateSvgThumbnail();
     void generateVideoThumbnail();
+    void generateAudioThumbnail();
 
     QString m_id;
     QSize m_requestedSize;

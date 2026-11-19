@@ -839,6 +839,8 @@ FocusScope {
                 required property string gitStatusIcon
                 required property bool hasImagePreview
                 required property bool hasVideoPreview
+                required property bool hasAudioPreview
+                required property bool hasPdfPreview
 
                 readonly property bool isSelected: currentColumn.selectedIndices.indexOf(index) >= 0
                 readonly property bool isCutPending: clipboard.isCut && clipboard.contains(currentDelegate.filePath)
@@ -894,7 +896,8 @@ FocusScope {
                             anchors.verticalCenter: parent.verticalCenter
 
                             readonly property bool hasThumbnail: !fileOps.isRemotePath(currentDelegate.filePath) && !fileOps.isSlowPath(currentDelegate.filePath)
-                                && (currentDelegate.isDir || currentDelegate.hasImagePreview || currentDelegate.hasVideoPreview)
+                                && (currentDelegate.isDir || currentDelegate.hasImagePreview || currentDelegate.hasVideoPreview
+                                    || currentDelegate.hasAudioPreview || currentDelegate.hasPdfPreview)
 
                             Image {
                                 anchors.fill: parent
@@ -913,11 +916,14 @@ FocusScope {
                                 visible: parent.hasThumbnail && status === Image.Ready
                                          && implicitWidth > 0
                                 fillMode: Image.PreserveAspectFit
-                                source: parent.hasThumbnail
-                                    ? ("image://thumbnail/" + encodeURIComponent(currentDelegate.filePath)
-                                       + "?mtime=" + new Date(currentDelegate.fileModified).getTime()
-                                       + (currentDelegate.isDir ? "&theme=" + config.iconTheme : ""))
-                                    : ""
+                                source: !parent.hasThumbnail
+                                    ? ""
+                                    : currentDelegate.hasPdfPreview
+                                        ? ("image://pdfpreview/" + encodeURIComponent(currentDelegate.filePath)
+                                           + "?page=0")
+                                        : ("image://thumbnail/" + encodeURIComponent(currentDelegate.filePath)
+                                           + "?mtime=" + new Date(currentDelegate.fileModified).getTime()
+                                           + (currentDelegate.isDir ? "&theme=" + config.iconTheme : ""))
                                 sourceSize: Qt.size(64 * Screen.devicePixelRatio, 64 * Screen.devicePixelRatio)
                                 asynchronous: true
                             }
@@ -1312,10 +1318,10 @@ FocusScope {
             readonly property bool pdfPreviewAvailable: previewService.pdfPreviewAvailable
             readonly property bool videoPreviewAvailable: runtimeFeatures.ffmpegAvailable
             readonly property bool textHighlightAvailable: runtimeFeatures.batAvailable
-            readonly property bool hasVisualPreview: isImage || (isVideo && videoPreviewAvailable)
+            readonly property bool hasVisualPreview: isImage || ((isVideo || isAudio) && videoPreviewAvailable)
             readonly property string visualSource: {
                 if (!hasVisualPreview || previewFilePath === "") return ""
-                if (isVideo || isTrashUri || isSvg) return "image://thumbnail/" + encodeURIComponent(previewFilePath)
+                if (isVideo || isAudio || isTrashUri || isSvg) return "image://thumbnail/" + encodeURIComponent(previewFilePath)
                 return "file://" + previewFilePath
             }
             readonly property string pdfImageSource: {
